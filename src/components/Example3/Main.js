@@ -42,22 +42,82 @@ class Main extends React.Component {
     // //gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0.74, 0.85, 0.8, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
 
+    /*
+      Create shaders
+     */
     var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     var program = createProgram(gl, vertexShader, fragmentShader);
 
-    const triangleVertices = [
-    // X,    Y,   R, G, B
-      0.0, 0.5, 0.0, 1.0, 1.0, 0.0,
-      -0.5, -0.5, 0.0, 1.0, 0.0, 1.0,
-      0.5, -0.5, 0.0, 0.3, 0.5, 0.1
+    const boxVertices = [
+      -1.0, 1.0, -1.0,    0.5, 0.5, 0.5,
+      -1.0, 1.0, 1.0,     0.5, 0.5, 0.5,
+      1.0, 1.0, 1.0,      0.5, 0.5, 0.5,
+      1.0, 1.0, -1.0,     0.5, 0.5, 0.5,
+
+      -1.0, 1.0, 1.0,   0.75, 0.25, 0.5
+      -1.0, -1.0, 1.0,  0.75, 0.25, 0.5
+      -1.0, -1.0, -1.0, 0.75, 0.25, 0.5,
+      -1.0, 1.0, -1.0,  0.75, 0.25, 0.5,
+
+      1.0, 1.0, 1.0,    0.25, 0.25, 0.75,
+      1.0, -1.0, 1.0,   0.25, 0.25, 0.75,
+      1.0, -1.0, -1.0,  0.25, 0.25, 0.75,
+      1.0, 1.0, -1.0,   0.25, 0.25, 0.75,
+
+      1.0, 1.0, 1.0,    1.0, 0.0, 0.15,
+      1.0, -1.0, 1.0,   1.0, 0.0, 0.15,
+      -1.0, -1.0, 1.0,  1.0, 0.0, 0.15,
+      -1.0, 1.0, 1.0,   1.0, 0.0, 0.15,
+
+      1.0, 1.0, -1.0,   0.0, 1.0, 0.15,
+      1.0, -1.0, -1.0,  0.0, 1.0, 0.15,
+      -1.0, -1.0, -1.0, 0.0, 1.0, 0.15,
+      -1.0, 1.0, -1.0,  0.0, 1.0, 0.15,
+
+      -1.0, -1.0, -1.0, 0.5, 0.5, 1.0,
+      -1.0, -1.0, 1.0,  0.5, 0.5, 1.0,
+      1.0, -1.0, 1.0,   0.5, 0.5, 1.0,
+      1.0, -1.0, -1.0,  0.5, 0.5, 1.0,
     ];
 
-    const triangleVertexBufferObject = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexBufferObject);
+    const boxIndices =
+      [
+        // Top
+        0, 1, 2,
+        0, 2, 3,
+
+        // Left
+        5, 4, 6,
+        6, 4, 7,
+
+        // Right
+        8, 9, 10,
+        8, 10, 11,
+
+        // Front
+        13, 12, 14,
+        15, 14, 12,
+
+        // Back
+        16, 17, 18,
+        16, 18, 19,
+
+        // Bottom
+        21, 20, 22,
+        22, 20, 23
+      ];
+
+    const boxVertexBufferObject = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, boxVertexBufferObject);
     // gl.STATIC_DRAW - sending data from CPU to GPU only once
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVertices), gl.STATIC_DRAW);
+
+    const boxIndexBufferObject = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, boxIndexBufferObject);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(boxIndices), gl.STATIC_DRAW);
 
     const positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
     const colorAttribLocation = gl.getAttribLocation(program, 'vertColor');
@@ -97,7 +157,7 @@ class Main extends React.Component {
     const matView = new Float32Array(16);
     const matProj = new Float32Array(16);
     mat4.identity(matWorld);
-    mat4.lookAt(matView, [0, 0, -2], [0, 0, 0], [0, 1, 0]); // mat, eye, target, up
+    mat4.lookAt(matView, [0, 0, -10], [0, 0, 0], [0, 1, 0]); // mat, eye, target, up
     mat4.perspective(matProj, glMatrix.toRadian(45), canvas.width / canvas.height, 0.1, 1000.0);
 
     gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, matWorld);
@@ -117,7 +177,8 @@ class Main extends React.Component {
 
       gl.clearColor(0.75, 0.85, 0.8, 1.0);
       gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);  // gl.TRIANGLES - used practically 99% of all times
+      // gl.drawArrays(gl.TRIANGLES, 0, 3);  // gl.TRIANGLES - used practically 99% of all times
+      gl.drawElements(gl.TRIANGLES, boxIndices.length, gl.UNSIGNED_SHORT, 0);
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);

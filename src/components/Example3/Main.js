@@ -10,7 +10,7 @@ import createProgram from '../../helpers/createProgram';
 import React from 'react';
 
 const vertexShaderSource = `
-attribute vec2 vertPosition;
+attribute vec3 vertPosition;
 attribute vec3 vertColor;
 varying vec3 fragColor1;
 uniform mat4 mWorld;
@@ -18,7 +18,7 @@ uniform mat4 mView;
 uniform mat4 mProj;
 void main() {
   fragColor1 = vertColor;
-  gl_Position = mProj * mView * mWorld * vec4(vertPosition, 0.0, 1.0);
+  gl_Position = mProj * mView * mWorld * vec4(vertPosition, 1.0);
 }
 `;
 
@@ -43,6 +43,9 @@ class Main extends React.Component {
     gl.clearColor(0.74, 0.85, 0.8, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+    gl.frontFace(gl.CCW);
+    gl.cullFace(gl.BACK);
 
     /*
       Create shaders
@@ -57,8 +60,8 @@ class Main extends React.Component {
       1.0, 1.0, 1.0,      0.5, 0.5, 0.5,
       1.0, 1.0, -1.0,     0.5, 0.5, 0.5,
 
-      -1.0, 1.0, 1.0,   0.75, 0.25, 0.5
-      -1.0, -1.0, 1.0,  0.75, 0.25, 0.5
+      -1.0, 1.0, 1.0,   0.75, 0.25, 0.5,
+      -1.0, -1.0, 1.0,  0.75, 0.25, 0.5,
       -1.0, -1.0, -1.0, 0.75, 0.25, 0.5,
       -1.0, 1.0, -1.0,  0.75, 0.25, 0.5,
 
@@ -80,7 +83,7 @@ class Main extends React.Component {
       -1.0, -1.0, -1.0, 0.5, 0.5, 1.0,
       -1.0, -1.0, 1.0,  0.5, 0.5, 1.0,
       1.0, -1.0, 1.0,   0.5, 0.5, 1.0,
-      1.0, -1.0, -1.0,  0.5, 0.5, 1.0,
+      1.0, -1.0, -1.0,  0.5, 0.5, 1.0
     ];
 
     const boxIndices =
@@ -112,7 +115,6 @@ class Main extends React.Component {
 
     const boxVertexBufferObject = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, boxVertexBufferObject);
-    // gl.STATIC_DRAW - sending data from CPU to GPU only once
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVertices), gl.STATIC_DRAW);
 
     const boxIndexBufferObject = gl.createBuffer();
@@ -164,6 +166,9 @@ class Main extends React.Component {
     gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, matView);
     gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, matProj);
 
+    var xRotationMatrix = new Float32Array(16);
+    var yRotationMatrix = new Float32Array(16);
+
     /*
       Main render loop
      */
@@ -172,12 +177,13 @@ class Main extends React.Component {
     let angle = 0;
     const loop = function() {
       angle = performance.now() / 1000 / 6 * 2 * Math.PI; // full rotation every 6 seconds
-      mat4.rotate(matWorld, identityMatrix, angle, [0, 1, 0]);
+      mat4.rotate(yRotationMatrix, identityMatrix, angle, [0, 1, 0]);
+      mat4.rotate(xRotationMatrix, identityMatrix, angle /4, [1, 0, 0]);
+      mat4.mul(matWorld, xRotationMatrix, yRotationMatrix);
       gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, matWorld);
 
       gl.clearColor(0.75, 0.85, 0.8, 1.0);
       gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-      // gl.drawArrays(gl.TRIANGLES, 0, 3);  // gl.TRIANGLES - used practically 99% of all times
       gl.drawElements(gl.TRIANGLES, boxIndices.length, gl.UNSIGNED_SHORT, 0);
       requestAnimationFrame(loop);
     };

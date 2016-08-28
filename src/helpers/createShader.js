@@ -11,5 +11,6 @@ export default function createShader(gl, type, source) {
     return shader;
   }
 
+  console.error(gl.getShaderInfoLog(shader));
   gl.deleteShader(shader);
 }

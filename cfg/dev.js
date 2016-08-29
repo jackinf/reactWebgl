@@ -20,11 +20,7 @@ let config = Object.assign({}, baseConfig, {
     new webpack.HotModuleReplacementPlugin(),
     new webpack.NoErrorsPlugin(),
     new BowerWebpackPlugin({
-      modulesDirectories: ["bower_components"],
-      manifestFiles:      "bower.json",
-      includes:           /.*/,
-      excludes:           [],
-      searchResolveModulesDirectories: true
+      searchResolveModulesDirectories: false
     })
   ],
   module: defaultSettings.getDefaultModules()
